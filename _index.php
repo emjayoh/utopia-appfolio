@@ -4,28 +4,25 @@ require_once(ABS_PATH . '_config.php');
 // =======================================================================//
 // ! Parse AppFolio XML                                                   //
 // =======================================================================//
-if (file_exists('utopiamanagement_rentlinx.xml')) {
+if (file_exists(UTOPIA_RENTLINX_FILENAME)) {
 
   // Loads the xml and returns a simplexml object
   $xml = simplexml_load_file(UTOPIA_RENTLINX_FILENAME);
 
   foreach ($xml->Properties->children() as $property) {
-    $full_address = $property->Address . ' ' . $property->City . ' ' . $properties->State . ' ' . $properties->Zip;
+    $full_address = $address . ' ' . $city . ' ' . $state . ' ' . $zip;
 
     // =======================================================================//
     // ! Call Google Geocoding API to determine neighborhood and county       //
     // =======================================================================//
-
     // Construct search query
     $search = (!empty($full_address) ? 'address=' . rawurlencode($full_address) : null);
-
 
     // Set api key
     $api_key = '&key=' . GOOGLE_API_KEY;
 
-
     // Build $request_url for api call
-    $request_url = 'https://maps.googleapis.com/maps/api/geocode/json?' . $search . $api_key;
+    $request_url = GOOGLE_GEOCODE_API_ENDPOINT . $search . $api_key;
     $curl = curl_init();
     curl_setopt($curl, CURLOPT_URL, $request_url);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
@@ -53,16 +50,12 @@ if (file_exists('utopiamanagement_rentlinx.xml')) {
     if (!empty($city)) {
       if ($city == 'Temecula') {
         $county = 'Temecula';
-      } elseif ($city == 'Palm Springs') {
+      }  elseif ($city == 'Palm Springs') {
         $county = 'Palm Springs';
       }
     }
 
-    if (!empty($city)) {
-      $county = $city;
-    }
-
-    $property->Address->addAttribute('full_address', $full_address);
+    $property->Address->addAttribute('FullAddress', $full_address);
 
     if (!empty($county)) {
       $property->Address->addAttribute('County', $county);
@@ -73,5 +66,5 @@ if (file_exists('utopiamanagement_rentlinx.xml')) {
     }
   }
 
-  echo $xml->asXML('appfolio.xml');
+  echo $xml->asXML(UTOPIA_APPFOLIO_FILENAME);
 }
