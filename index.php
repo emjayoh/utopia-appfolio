@@ -1,0 +1,2 @@
+<?php
+$appfolio = new AppFolio();
