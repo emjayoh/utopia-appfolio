@@ -5,12 +5,9 @@ class AppFolio {
   private $xml_data;
 
   function __construct() {
-    $this->loadXMLData();
-    $this->printXMLData();
-  }
-
-  private function loadXMLData() {
-    $this->xml_data = $this->downloadPageIfModified();
+    if ($this->downloadPageIfModified()) {
+      $this->callGoogleAPI();
+    }
   }
 
   private function getLastXMLModificationTime() {
@@ -19,7 +16,9 @@ class AppFolio {
 
   private function downloadPageIfModified() {
     $ret_val = null;
+    $modified = false;
     $ch = curl_init();
+
     curl_setopt($ch, CURLOPT_URL, APPFOLIO_XML_ENDPOINT);
     curl_setopt($ch, CURLOPT_FILETIME, true);
     curl_setopt($ch, CURLOPT_FAILONERROR, true);
@@ -29,24 +28,30 @@ class AppFolio {
     curl_setopt($ch, CURLOPT_HEADER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-
-//    $modified = curl_getinfo($ch, CURLINFO_FILETIME);
-//    if ($modified > -1) {
     $ret_val = curl_exec($ch);
-
-//    }
-    // DEBUG
     $local_modified = $this->getLastXMLModificationTime();
-    echo 'local modfied: ' . $local_modified . '   ';
-    $remote_modification = curl_getinfo($ch, CURLINFO_FILETIME);
+    $remote_modified = curl_getinfo($ch, CURLINFO_FILETIME);
 
-    echo 'remote modified: ' . $remote_modification;
-    exit;
-    var_dump($info);
+//    DEBUG
+//    echo 'local modfied: ' . $local_modified . '   ';
+//    echo 'remote modified: ' . $remote_modified;
+
+    // Only write file if not exist or older than remote
+    if (!$local_modified || $local_modified < $remote_modified) {
+      $modified = true;
+      file_put_contents(RENTLINX_FILENAME, $ret_val);
+    }
 
     curl_close($ch);
-    var_dump($ret_val);
-    return $ret_val;
+    $this->raw_xml_data = simplexml_load_string($ret_val);
+
+    return $modified;
+  }
+
+  private function callGoogleAPI() {
+    foreach($this->xml_data->Properties->children() as $property) {
+      $full_address = $property->Address . ' ' . $property->City . ' ' . $property->State . ' ' . $properties->Zip;
+    }
   }
 
   private function printXMLData() {
