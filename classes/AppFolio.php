@@ -16,13 +16,13 @@ class AppFolio {
   private function getLastXMLModificationTime() {
     return filemtime(RENTLINX_FILENAME);
   }
+
   private function downloadPageIfModified() {
     $ret_val = null;
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, APPFOLIO_XML_ENDPOINT);
     curl_setopt($ch, CURLOPT_FILETIME, true);
     curl_setopt($ch, CURLOPT_FAILONERROR, true);
-//    curl_setopt($ch, CURLOPT_NOBODY, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 15);
