@@ -56,9 +56,12 @@ class AppFolio {
   }
 
   private function callGoogleAPI() {
+
+    // Each property
     foreach($this->xml_data->Properties->children() as $property) {
       $full_address = $property->Address . ' ' . $property->City . ' ' . $property->State . ' ' . $property->Zip;
 
+      // Address
       if (isset($full_address) && !empty($full_address)) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, GOOGLE_GEOCODE_API_ENDPOINT . 'address=' . rawurlencode($full_address) . '&key=' . GOOGLE_API_KEY);
@@ -67,20 +70,15 @@ class AppFolio {
 
         if (isset($ret_val) && !empty($ret_val)) {
           $json = json_decode($ret_val);
-          var_dump($json->results[0]);
 
           foreach($json->results[0]->address_components as $location) {
             if (in_array('administrative_area_level_2', $location->types)) { $county = $location->long_name; };
             if (in_array('neighborhood', $location->types)) { $neighborhood = $location->long_name; }
             if (in_array('locality', $location->types)) { $city = $location->long_name; }
 
-            // Add Attributes to XML
-            if (!empty($city)) {
-              if ($city == 'Temecula') {
-                $county = 'Temecula';
-              } elseif ($city == 'Palm Springs') {
-                $county = 'Palm Springs';
-              }
+            // Special cases for Temecula and Palm Springs
+            if (!empty($city) && ($city == 'Temecula' || $city == 'Palm Springs')) {
+              $county = $city;
             }
           }
 
@@ -95,7 +93,44 @@ class AppFolio {
           }
         }
       }
+
+      // Each unit
+      foreach($property->Unit as $unit) {
+        if (isset($full_address) && !empty($full_address)) {
+          $unit->addChild('FullAddress', $full_address);
+        }
+
+        if (isset($county) && !empty($county)) {
+          $unit->addChild('County', $county);
+        }
+
+        if (isset($neighborhood) && !empty($neighborhood)) {
+          $unit->addChild('Neighborhood');
+        }
+
+        if (isset($property->Latitude) && !empty($property->Latitude)) {
+          $unit->addChild('Latitude', $property->Latitude);
+        }
+
+        if (isset($property->Longitude) && !empty($property->Longitude)) {
+          $unit->addChild('Longitude', $property->Longitude);
+        }
+
+        foreach($property->PropertyPhoto as $photo) {
+          $unit->addChild('UnitPhoto')->addAttribute('ImageUrl', $photo['ImageUrl']);
+        }
+
+        if (isset($property->PropertyType) && !empty($property->PropertyType)) {
+          $unit->addChild('PropertyType', $property->PropertyType);
+        }
+
+        if (isset($property->PhoneNumber) && !empty($property->PhoneNumber)) {
+          $unit->addChild('PropertyPhoneNumber', $property->PhoneNumber);
+        }
+      }
     }
+
+    // Create file
     $this->xml_data->asXML('appfolio_1.xml');
   }
 
