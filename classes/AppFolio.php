@@ -127,6 +127,10 @@ class AppFolio {
         if (isset($property->PhoneNumber) && !empty($property->PhoneNumber)) {
           $unit->addChild('PropertyPhoneNumber', $property->PhoneNumber);
         }
+
+        // PAT ADD CODE HERE
+        // - only add amenity to unit from property if not already in unit
+
       }
     }
 
