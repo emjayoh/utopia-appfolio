@@ -1,6 +1,4 @@
 <?php
-//include(ABSPATH . '_config.php');
-
 class AppFolio {
   private $xml_data;
 
