@@ -7,6 +7,9 @@ class AppFolio {
   function __construct() {
     if ($this->downloadPageIfModified()) {
       $this->callGoogleAPI();
+    } else {
+      echo 'No files modified.';
+      exit;
     }
   }
 
@@ -38,11 +41,6 @@ class AppFolio {
     $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
     $ret_val_body = substr($ret_val, $header_size);
     $this->xml_data = simplexml_load_string($ret_val_body);
-
-
-//    DEBUG
-//    echo 'local modfied: ' . $local_modified . '   ';
-//    echo 'remote modified: ' . $remote_modified;
 
     // Only write file if not exist or older than remote
     if (!$local_modified || $local_modified < $remote_modified) {
@@ -105,7 +103,7 @@ class AppFolio {
         }
 
         if (isset($neighborhood) && !empty($neighborhood)) {
-          $unit->addChild('Neighborhood');
+          $unit->addChild('Neighborhood', $neighborhood);
         }
 
         if (isset($property->Latitude) && !empty($property->Latitude)) {
@@ -128,16 +126,29 @@ class AppFolio {
           $unit->addChild('PropertyPhoneNumber', $property->PhoneNumber);
         }
 
-        // PAT ADD CODE HERE
-        // - only add amenity to unit from property if not already in unit
+        // Unit amenities
+        $unit_amenities = array();
+        foreach($unit->Amenities as $unit_amenity) {
+          $unit_amenities[] = $unit_amenity['AmenityID'];
+        }
 
+        foreach($property->Amenity as $property_amenity) {
+          if (!in_array($property_amenity['AmenityID'], $unit_amenities)) {
+            $unit_child = $unit->addChild('Amenity');
+            $unit_child->AddAttribute('AmenityID', $property_amenity['AmenityID']);
+            $unit_child->addAttribute('AmenityName', $property_amenity['AmenityName']);
+          }
+        }
       }
     }
 
     // Create file
-    $this->xml_data->asXML('appfolio_1.xml');
+    $this->xml_data->asXML(APPFOLIO_FILENAME);
+    echo 'File \'appfolio.xml\' (<a href="./appfolio.xml" target="_blank">AppFolio</a>) was modified and saved to the server.';
+    exit;
   }
 
+  // DEBUG
   private function printXMLData() {
     var_dump($this->xml_data);
   }
